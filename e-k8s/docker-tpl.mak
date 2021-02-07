@@ -29,13 +29,13 @@ LOG_DIR=logs
 all: s1 db
 
 deploy: s1 db
-	$(DK) run -t --publish 30000:30000 --detach --name s1 $(CREG)/$(REGID)/cmpt756s1:e3 | tee s1.svc.log
+	$(DK) run -t --publish 30000:30000 --add-host host.docker.internal:host-gateway --detach --name s1 $(CREG)/$(REGID)/cmpt756s1:e3 | tee s1.svc.log
 	$(DK) run -t \
 		-e AWS_REGION="ZZ-AWS-REGION" \
 		-e AWS_ACCESS_KEY_ID="ZZ-AWS-ACCESS-KEY-ID" \
 		-e AWS_SECRET_ACCESS_KEY="ZZ-AWS-SECRET-ACCESS-KEY" \
 		-e AWS_SESSION_TOKEN="ZZ-AWS-SESSION-TOKEN" \
-            --publish 30002:30002 --detach --name db $(CREG)/$(REGID)/cmpt756db:e3 | tee db.svc.log
+			--add-host host.docker.internal:host-gateway --publish 30002:30002 --detach --name db $(CREG)/$(REGID)/cmpt756db:e3 | tee db.svc.log
 
 scratch:
 	$(DK) stop `$(DK) ps -a -q --filter name="db"` | tee db.stop.log
