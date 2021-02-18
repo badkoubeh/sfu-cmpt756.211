@@ -138,6 +138,30 @@ dashboard: showcontext
 extern: showcontext
 	$(KC) -n $(ISTIO_NS) get svc istio-ingressgateway
 
+# --- log-X: show the log of a particular service
+log-s1:
+	$(KC) -n $(APP_NS) logs deployment/cmpt756s1 --container cmpt756s1
+
+log-s2:
+	$(KC) -n $(APP_NS) logs deployment/cmpt756s2 --container cmpt756s2
+
+log-db:
+	$(KC) -n $(APP_NS) logs deployment/cmpt756db --container cmpt756db
+
+
+# --- shell-X: hint for shell into a particular service
+shell-s1:
+	@echo Use the following command line to drop into the s1 service:
+	@echo   $(KC) -n $(APP_NS) exec -it deployment/cmpt756s1 --container cmpt756s1 -- bash
+
+shell-s2:
+	@echo Use the following command line to drop into the s2 service:
+	@echo   $(KC) -n $(APP_NS) exec -it deployment/cmpt756s2 --container cmpt756s2 -- bash
+
+shell-db:
+	@echo Use the following command line to drop into the db service:
+	@echo   $(KC) -n $(APP_NS) exec -it deployment/cmpt756db --container cmpt756db -- bash
+
 # --- lsa: List services in all namespaces
 lsa: showcontext
 	$(KC) get svc --all-namespaces
@@ -153,10 +177,9 @@ lsd:
 # --- reinstate: Reinstate provisioning on a new set of worker nodes
 # Do this after you do `up` on a cluster that implements that operation.
 # AWS implements `up` and `down`; other cloud vendors may not.
-reinstate:
+reinstate: istio
 	$(KC) create ns $(APP_NS) | tee $(LOG_DIR)/reinstate.log
 	$(KC) label ns $(APP_NS) istio-injection=enabled | tee -a $(LOG_DIR)/reinstate.log
-	$(IC) install --set profile=demo | tee -a $(LOG_DIR)/reinstate.log
 
 # --- showcontext: Display current context
 showcontext:
@@ -176,7 +199,7 @@ dynamodb-init: $(LOG_DIR)/dynamodb-init.log
 # --- dynamodb-stop: Stop the AWS DynamoDB service
 #
 dynamodb-clean:
-	$(AWS) cloudformation delete-stack --stack-name db-ZZ-AWS-ACCESS-KEY-ID || true | tee $(LOG_DIR)/dynamodb-clean.log
+	$(AWS) cloudformation delete-stack --stack-name db-ZZ-REG-ID || true | tee $(LOG_DIR)/dynamodb-clean.log
 	@# Rename DynamoDB log so dynamodb-init will force a restart but retain the log
 	/bin/mv -f $(LOG_DIR)/dynamodb-init.log $(LOG_DIR)/dynamodb-init-old.log
 
@@ -276,7 +299,7 @@ gw: cluster/service-gateway.yaml
 $(LOG_DIR)/dynamodb-init.log: cluster/cloudformationdynamodb.json
 	@# "|| true" suffix because command fails when stack already exists
 	@# (even with --on-failure DO_NOTHING, a nonzero error code is returned)
-	$(AWS) cloudformation create-stack --stack-name db-ZZ-AWS-ACCESS-KEY-ID --template-body file://$< || true | tee $(LOG_DIR)/dynamodb-init.log
+	$(AWS) cloudformation create-stack --stack-name db-ZZ-REG-ID --template-body file://$< || true | tee $(LOG_DIR)/dynamodb-init.log
 
 # Update S1 and associated monitoring, rebuilding if necessary
 s1: $(LOG_DIR)/s1.repo.log cluster/s1.yaml cluster/s1-sm.yaml cluster/s1-vs.yaml
