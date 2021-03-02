@@ -1,0 +1,4 @@
+
+*.log
+*.log
+e-k8s/db.stop.log
